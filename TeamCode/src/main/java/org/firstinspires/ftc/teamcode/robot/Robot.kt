@@ -18,12 +18,11 @@ class Robot(hardwareMap: HardwareMap, gamepad1: Gamepad, gamepad2: Gamepad): Rob
     private val odometry: GoBildaPinpointDriver = hardware["odometry"]
 
     init {
-        limelight.start()
-
         register(drive)
     }
 
     fun start() {
+        limelight.start()
         odometry.resetPosAndIMU()
     }
 
