@@ -3,11 +3,14 @@ package org.firstinspires.ftc.teamcode.teleop
 import com.arcrobotics.ftclib.command.InstantCommand
 import com.arcrobotics.ftclib.command.button.GamepadButton
 import com.arcrobotics.ftclib.gamepad.GamepadKeys
+import com.arcrobotics.ftclib.hardware.motors.CRServo
 import com.arcrobotics.ftclib.hardware.motors.MotorEx
+import com.qualcomm.hardware.bosch.BNO055IMU
 import com.qualcomm.hardware.limelightvision.Limelight3A
 import com.qualcomm.robotcore.eventloop.opmode.OpMode
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import com.qualcomm.robotcore.hardware.Servo
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
 import org.firstinspires.ftc.teamcode.robot.Activation
 import org.firstinspires.ftc.teamcode.robot.ButtonData
 import org.firstinspires.ftc.teamcode.robot.Robot
@@ -39,11 +42,21 @@ class Main: OpMode() {
 
             ButtonData(GamepadKeys.Button.Y,
                 InstantCommand({
-                    (robot.hardware["intake"] as MotorEx).set(-1.0)
+                    (robot.hardware["intake"] as MotorEx).set(1.0)
                 }),
 
                 InstantCommand({
                     (robot.hardware["intake"] as MotorEx).set(0.0)
+                })
+            ) to Activation.TOGGLE,
+
+            ButtonData(GamepadKeys.Button.B,
+                InstantCommand({
+                    (robot.hardware["upper_intake"] as CRServo).set(-1.0)
+                }),
+
+                InstantCommand({
+                    (robot.hardware["upper_intake"] as CRServo).set(0.0)
                 })
             ) to Activation.TOGGLE,
 
@@ -92,10 +105,12 @@ class Main: OpMode() {
 
         if (result.isValid) {
             telemetry.addData("Pose", result.botpose.toString())
+
+            robot.turnToAngle(Math.toRadians(result.botpose.orientation.yaw))
         }
 
         telemetry.update()
         robot.loop()
-        robot.drive.drive(robot.gamepads.first, 1.0)
+//        robot.drive.drive(robot.gamepads.first, 1.0)
     }
 }

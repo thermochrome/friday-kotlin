@@ -6,6 +6,7 @@ import com.arcrobotics.ftclib.hardware.motors.MotorEx
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver
 import com.qualcomm.hardware.limelightvision.Limelight3A
 import com.qualcomm.robotcore.hardware.HardwareMap
+import com.qualcomm.robotcore.hardware.Servo
 
 class Hardware(private val hardwareMap: HardwareMap) {
     object Native
@@ -20,6 +21,7 @@ class Hardware(private val hardwareMap: HardwareMap) {
         "outtake_l" to MotorEx::class,
         "outtake_r" to MotorEx::class,
         "intake" to MotorEx::class,
+        "upper_intake" to CRServo::class,
 
         "feeder" to Native,
         "odometry" to Native,
@@ -36,15 +38,28 @@ class Hardware(private val hardwareMap: HardwareMap) {
                 CRServo::class -> CRServo(hardwareMap, name)
 
                 Native -> {
-                    val device = hardwareMap.get(type.javaClass, name)
-
                     when (name) {
-                        "odometry" -> (device as GoBildaPinpointDriver).setEncoderResolution(
-                            GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
+                        "odometry" -> {
+                            val device = hardwareMap.get(GoBildaPinpointDriver::class.java, name)
 
-                        "limelight" -> (device as Limelight3A).pipelineSwitch(0)
+                            device.setEncoderResolution(
+                                GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
+                            device
+                        }
 
-                        else -> device
+                        "limelight" -> {
+                            val device = hardwareMap.get(Limelight3A::class.java, name)
+
+                            device.pipelineSwitch(0)
+                            device
+                        }
+
+                        "feeder" -> {
+                            val device = hardwareMap.get(Servo::class.java, name)
+                            device
+                        }
+
+                        else -> throw IllegalArgumentException("Could not find $name")
                     }
                 }
 
@@ -60,10 +75,6 @@ class Hardware(private val hardwareMap: HardwareMap) {
     inline operator fun <reified T> get(name: String): T {
         val device = objects[name] ?: throw IllegalArgumentException("$name not found")
 
-        if (device !is T) {
-            throw IllegalArgumentException("$name is not a ${T::class.simpleName}")
-        }
-
-        return device
+        return device as T
     }
 }

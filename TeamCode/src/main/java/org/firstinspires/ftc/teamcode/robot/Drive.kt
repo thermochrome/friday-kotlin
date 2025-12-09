@@ -21,7 +21,7 @@ class Drive(hardware: Hardware): Subsystem {
             1.0
         )
 
-        val x = (-gamepad.leftX / normalization) * power
+        val x = (gamepad.leftX / normalization) * power
         val y = (gamepad.leftY / normalization) * power
         val rotation = (gamepad.rightX / normalization) * power
 
