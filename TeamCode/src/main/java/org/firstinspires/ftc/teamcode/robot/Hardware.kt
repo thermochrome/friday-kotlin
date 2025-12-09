@@ -1,80 +1,106 @@
 package org.firstinspires.ftc.teamcode.robot
 
+import com.arcrobotics.ftclib.command.Robot
+import com.arcrobotics.ftclib.command.Subsystem
+import com.arcrobotics.ftclib.drivebase.MecanumDrive
+import com.arcrobotics.ftclib.gamepad.GamepadEx
 import com.arcrobotics.ftclib.hardware.motors.CRServo
 import com.arcrobotics.ftclib.hardware.motors.Motor
 import com.arcrobotics.ftclib.hardware.motors.MotorEx
+import com.arcrobotics.ftclib.hardware.motors.MotorGroup
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver
 import com.qualcomm.hardware.limelightvision.Limelight3A
+import com.qualcomm.robotcore.hardware.Gamepad
 import com.qualcomm.robotcore.hardware.HardwareMap
 import com.qualcomm.robotcore.hardware.Servo
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
 
 class Hardware(private val hardwareMap: HardwareMap) {
-    object Native
-
-    val objects: MutableMap<String, Any> = LinkedHashMap()
-
-    private val objectData = mapOf(
-        "left_front" to MotorEx::class,
-        "right_front" to MotorEx::class,
-        "left_back" to MotorEx::class,
-        "right_back" to MotorEx::class,
-        "outtake_l" to MotorEx::class,
-        "outtake_r" to MotorEx::class,
-        "intake" to MotorEx::class,
-        "upper_intake" to CRServo::class,
-
-        "feeder" to Native,
-        "odometry" to Native,
-        "limelight" to Native
-    )
-
-    init {
-        val devices = objectData.map { (name, type) ->
-            val device = when (type) {
-                MotorEx::class -> MotorEx(hardwareMap, name).apply {
-                    setRunMode(Motor.RunMode.RawPower)
-                }
-
-                CRServo::class -> CRServo(hardwareMap, name)
-
-                Native -> {
-                    when (name) {
-                        "odometry" -> {
-                            val device = hardwareMap.get(GoBildaPinpointDriver::class.java, name)
-
-                            device.setEncoderResolution(
-                                GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
-                            device
-                        }
-
-                        "limelight" -> {
-                            val device = hardwareMap.get(Limelight3A::class.java, name)
-
-                            device.pipelineSwitch(0)
-                            device
-                        }
-
-                        "feeder" -> {
-                            val device = hardwareMap.get(Servo::class.java, name)
-                            device
-                        }
-
-                        else -> throw IllegalArgumentException("Could not find $name")
-                    }
-                }
-
-                else -> throw IllegalArgumentException("Could not find $name")
-            }
-
-            name to device
-        }.toMap()
-
-        objects.putAll(devices)
+    private fun motor(name: String) = name to lazy {
+        MotorEx(hardwareMap, name).apply { setRunMode(Motor.RunMode.RawPower) }
     }
 
-    inline operator fun <reified T> get(name: String): T {
-        val device = objects[name] ?: throw IllegalArgumentException("$name not found")
+    private fun servo(name: String) = name to lazy {
+        CRServo(hardwareMap, name)
+    }
 
-        return device as T
+    private inline fun <reified T> device(name: String, crossinline apply: (T) -> Unit = {}) = name to lazy {
+        hardwareMap.get(T::class.java, name).apply(apply)
+    }
+
+    val devices = mapOf(
+        motor("left_front"),
+        motor("right_front"),
+        motor("left_back"),
+        motor("right_back"),
+
+        "outtake" to lazy { MotorGroup(
+            MotorEx(hardwareMap, "outtake_l"),
+            MotorEx(hardwareMap, "outtake_r").apply { inverted = true }
+        ).apply { setRunMode(Motor.RunMode.RawPower) }}, // TODO: Change to velocity
+
+        motor("intake"),
+        servo("upper_intake"),
+        device<Servo>("feeder"),
+
+        device<GoBildaPinpointDriver>("odometry") {
+            it.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
+        },
+
+        device<Limelight3A>("limelight") {
+            it.pipelineSwitch(0)
+        }
+    )
+
+    inline operator fun <reified T> get(name: String): T {
+        val device = devices[name]?.value ?: throw IllegalArgumentException("Couldn't find $name")
+
+        return device as? T ?: throw IllegalArgumentException("$name is not ${T::class.simpleName}")
+    }
+}
+
+class Drive(hardware: Hardware): Subsystem {
+    val drive = MecanumDrive(
+        hardware.get<MotorEx>("left_front"),
+        hardware.get<MotorEx>("right_front"),
+        hardware.get<MotorEx>("left_back"),
+        hardware.get<MotorEx>("right_back")
+    )
+
+    @Suppress("unused")
+    var power = 1.0
+        set(value) {
+            drive.setMaxSpeed(value)
+            field = value
+        }
+
+    fun drive(gamepad: GamepadEx) {
+        drive.driveRobotCentric(gamepad.leftX, gamepad.leftY, gamepad.rightX)
+    }
+}
+
+class Robot(hardwareMap: HardwareMap, gamepad1: Gamepad, gamepad2: Gamepad): Robot() {
+    val hardware = Hardware(hardwareMap)
+    val drive = Drive(hardware)
+
+    val gamepads = Pair(GamepadEx(gamepad1), GamepadEx(gamepad2))
+
+    private val limelight: Limelight3A = hardware["limelight"]
+    private val odometry: GoBildaPinpointDriver = hardware["odometry"]
+
+    init {
+        register(drive)
+    }
+
+    fun start() {
+        limelight.start()
+        odometry.resetPosAndIMU()
+    }
+
+    fun loop() {
+        limelight.updateRobotOrientation(odometry.getHeading(AngleUnit.DEGREES))
+        odometry.update()
+
+        run()
     }
 }

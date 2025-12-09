@@ -1,19 +1,27 @@
 package org.firstinspires.ftc.teamcode.teleop
 
+import com.arcrobotics.ftclib.command.Command
 import com.arcrobotics.ftclib.command.InstantCommand
 import com.arcrobotics.ftclib.command.button.GamepadButton
 import com.arcrobotics.ftclib.gamepad.GamepadKeys
 import com.arcrobotics.ftclib.hardware.motors.CRServo
 import com.arcrobotics.ftclib.hardware.motors.MotorEx
-import com.qualcomm.hardware.bosch.BNO055IMU
+import com.arcrobotics.ftclib.hardware.motors.MotorGroup
 import com.qualcomm.hardware.limelightvision.Limelight3A
 import com.qualcomm.robotcore.eventloop.opmode.OpMode
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import com.qualcomm.robotcore.hardware.Servo
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
-import org.firstinspires.ftc.teamcode.robot.Activation
-import org.firstinspires.ftc.teamcode.robot.ButtonData
 import org.firstinspires.ftc.teamcode.robot.Robot
+
+enum class Activation {
+    TOGGLE, PRESS, HELD
+}
+
+data class ButtonData(
+    val key: GamepadKeys.Button,
+    val activated: Command,
+    val deactivated: Command? = null
+)
 
 @Suppress("unused") @TeleOp
 class Main: OpMode() {
@@ -29,14 +37,11 @@ class Main: OpMode() {
         val buttons = mapOf(
             ButtonData(GamepadKeys.Button.X,
                 InstantCommand({
-                    val power = powers.getValue("outtake_power")
-                    (robot.hardware["outtake_l"] as MotorEx).set(power)
-                    (robot.hardware["outtake_r"] as MotorEx).set(-power)
+                    robot.hardware.get<MotorGroup>("outtake").set(powers.getValue("outtake_power"))
                 }),
 
                 InstantCommand({
-                    (robot.hardware["outtake_l"] as MotorEx).set(0.0)
-                    (robot.hardware["outtake_r"] as MotorEx).set(0.0)
+                    robot.hardware.get<MotorGroup>("outtake").set(0.0)
                 })
             ) to Activation.TOGGLE,
 
@@ -98,19 +103,17 @@ class Main: OpMode() {
     }
 
     override fun loop() {
-        telemetry.addData("RPM", (robot.hardware["outtake_l"] as MotorEx).correctedVelocity * 60 / 103.8)
+        telemetry.addData("RPM", robot.hardware.get<MotorGroup>("outtake").velocity * 60 / 103.8)
         telemetry.addData("Power", powers["outtake_power"])
 
-        val result = (robot.hardware["limelight"] as Limelight3A).latestResult
+        val result = robot.hardware.get<Limelight3A>("limelight").latestResult
 
         if (result.isValid) {
             telemetry.addData("Pose", result.botpose.toString())
-
-            robot.turnToAngle(Math.toRadians(result.botpose.orientation.yaw))
         }
 
         telemetry.update()
         robot.loop()
-//        robot.drive.drive(robot.gamepads.first, 1.0)
+        robot.drive.drive(robot.gamepads.first)
     }
 }
