@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.teleop
 import com.arcrobotics.ftclib.command.Command
 import com.arcrobotics.ftclib.command.InstantCommand
 import com.arcrobotics.ftclib.command.button.GamepadButton
+import com.arcrobotics.ftclib.gamepad.GamepadEx
 import com.arcrobotics.ftclib.gamepad.GamepadKeys
 import com.arcrobotics.ftclib.hardware.motors.CRServo
 import com.arcrobotics.ftclib.hardware.motors.MotorEx
@@ -20,7 +21,8 @@ enum class Activation {
 data class ButtonData(
     val key: GamepadKeys.Button,
     val activated: Command,
-    val deactivated: Command? = null
+    val deactivated: Command? = null,
+    val gamepad: GamepadEx? = null
 )
 
 @Suppress("unused") @TeleOp
@@ -80,10 +82,34 @@ class Main: OpMode() {
             ButtonData(GamepadKeys.Button.DPAD_LEFT, InstantCommand({
                 powers["outtake_power"] = powers["outtake_power"]!! - 0.05
             })) to Activation.PRESS,
+
+            ButtonData(GamepadKeys.Button.DPAD_UP,
+                InstantCommand({
+                    robot.hardware.get<MotorEx>("up").set(1.0)
+                }),
+
+                InstantCommand({
+                    robot.hardware.get<MotorEx>("up").set(0.0)
+                }),
+
+                gamepad = robot.gamepads.first
+            ) to Activation.HELD,
+
+            ButtonData(GamepadKeys.Button.DPAD_DOWN,
+                InstantCommand({
+                    robot.hardware.get<MotorEx>("up").set(-1.0)
+                }),
+
+                InstantCommand({
+                    robot.hardware.get<MotorEx>("up").set(0.0)
+                }),
+
+                gamepad = robot.gamepads.first
+            ) to Activation.HELD,
         )
 
         buttons.forEach { (buttonData, activation) ->
-            val button = GamepadButton(robot.gamepads.second, buttonData.key)
+            val button = GamepadButton(buttonData.gamepad ?: robot.gamepads.second, buttonData.key)
 
             when (activation) {
                 Activation.TOGGLE -> button.toggleWhenPressed(
@@ -93,7 +119,7 @@ class Main: OpMode() {
 
                 Activation.PRESS -> button.whenPressed(buttonData.activated)
 
-                Activation.HELD -> button.whenHeld(buttonData.activated)
+                Activation.HELD -> button.whenPressed(buttonData.activated).whenReleased(buttonData.deactivated)
             }
         }
     }

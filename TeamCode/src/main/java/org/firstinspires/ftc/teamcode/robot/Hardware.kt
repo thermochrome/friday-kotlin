@@ -16,8 +16,11 @@ import com.qualcomm.robotcore.hardware.Servo
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
 
 class Hardware(private val hardwareMap: HardwareMap) {
-    private fun motor(name: String) = name to lazy {
-        MotorEx(hardwareMap, name).apply { setRunMode(Motor.RunMode.RawPower) }
+    private inline fun motor(name: String, crossinline apply: (MotorEx) -> Unit = {}) = name to lazy {
+        MotorEx(hardwareMap, name).apply {
+            setRunMode(Motor.RunMode.RawPower)
+            apply(this)
+        }
     }
 
     private fun servo(name: String) = name to lazy {
@@ -33,6 +36,9 @@ class Hardware(private val hardwareMap: HardwareMap) {
         motor("right_front"),
         motor("left_back"),
         motor("right_back"),
+        motor("up") {
+            it.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE)
+        },
 
         "outtake" to lazy { MotorGroup(
             MotorEx(hardwareMap, "outtake_l"),
