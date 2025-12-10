@@ -25,6 +25,7 @@ public class Constants {
                 .pathConstraints(pathConstraints)
                 .mecanumDrivetrain(driveConstants)
                 .pinpointLocalizer(localizerConstants)
+                .driveEncoderLocalizer(encoderConstants)
                 .build();
     }
 
@@ -44,8 +45,8 @@ public class Constants {
             .leftFrontMotorName("left_front")
             .leftFrontEncoderDirection(Encoder.FORWARD)
             .leftRearEncoderDirection(Encoder.FORWARD)
-            .rightFrontEncoderDirection(Encoder.REVERSE)
-            .rightRearEncoderDirection(Encoder.REVERSE)
+            .rightFrontEncoderDirection(Encoder.FORWARD)
+            .rightRearEncoderDirection(Encoder.FORWARD)
             .forwardTicksToInches(-11278.1544898575)
             .strafeTicksToInches(109227.0489229431)
             .turnTicksToInches(-0.9960116632638786);

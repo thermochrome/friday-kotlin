@@ -49,30 +49,30 @@ class Main: OpMode() {
 
             ButtonData(GamepadKeys.Button.Y,
                 InstantCommand({
-                    (robot.hardware["intake"] as MotorEx).set(1.0)
+                    robot.hardware.get<MotorEx>("intake").set(1.0)
                 }),
 
                 InstantCommand({
-                    (robot.hardware["intake"] as MotorEx).set(0.0)
+                    robot.hardware.get<MotorEx>("intake").set(0.0)
                 })
             ) to Activation.TOGGLE,
 
             ButtonData(GamepadKeys.Button.B,
                 InstantCommand({
-                    (robot.hardware["upper_intake"] as CRServo).set(-1.0)
+                    robot.hardware.get<CRServo>("upper_intake").set(-1.0)
                 }),
 
                 InstantCommand({
-                    (robot.hardware["upper_intake"] as CRServo).set(0.0)
+                    robot.hardware.get<CRServo>("upper_intake").set(0.0)
                 })
             ) to Activation.TOGGLE,
 
             ButtonData(GamepadKeys.Button.DPAD_UP, InstantCommand({
-                (robot.hardware["feeder"] as Servo).position = (45.0 / 57.2958)
+                robot.hardware.get<Servo>("feeder").position = (45.0 / 57.2958)
             })) to Activation.PRESS,
 
             ButtonData(GamepadKeys.Button.DPAD_DOWN, InstantCommand({
-                (robot.hardware["feeder"] as Servo).position = (22.0 / 57.2958)
+                robot.hardware.get<Servo>("feeder").position = (22.0 / 57.2958)
             })) to Activation.PRESS,
 
             ButtonData(GamepadKeys.Button.DPAD_RIGHT, InstantCommand({
@@ -81,35 +81,11 @@ class Main: OpMode() {
 
             ButtonData(GamepadKeys.Button.DPAD_LEFT, InstantCommand({
                 powers["outtake_power"] = powers["outtake_power"]!! - 0.05
-            })) to Activation.PRESS,
-
-            ButtonData(GamepadKeys.Button.DPAD_UP,
-                InstantCommand({
-                    robot.hardware.get<MotorEx>("up").set(1.0)
-                }),
-
-                InstantCommand({
-                    robot.hardware.get<MotorEx>("up").set(0.0)
-                }),
-
-                gamepad = robot.gamepads.first
-            ) to Activation.HELD,
-
-            ButtonData(GamepadKeys.Button.DPAD_DOWN,
-                InstantCommand({
-                    robot.hardware.get<MotorEx>("up").set(-1.0)
-                }),
-
-                InstantCommand({
-                    robot.hardware.get<MotorEx>("up").set(0.0)
-                }),
-
-                gamepad = robot.gamepads.first
-            ) to Activation.HELD,
+            })) to Activation.PRESS
         )
 
         buttons.forEach { (buttonData, activation) ->
-            val button = GamepadButton(buttonData.gamepad ?: robot.gamepads.second, buttonData.key)
+            val button = GamepadButton(buttonData.gamepad ?: robot.secondGamepad, buttonData.key)
 
             when (activation) {
                 Activation.TOGGLE -> button.toggleWhenPressed(
@@ -140,6 +116,6 @@ class Main: OpMode() {
 
         telemetry.update()
         robot.loop()
-        robot.drive.drive(robot.gamepads.first)
+        robot.drive.drive(robot.firstGamepad)
     }
 }

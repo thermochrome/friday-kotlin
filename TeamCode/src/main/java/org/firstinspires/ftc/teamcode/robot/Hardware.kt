@@ -16,10 +16,9 @@ import com.qualcomm.robotcore.hardware.Servo
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
 
 class Hardware(private val hardwareMap: HardwareMap) {
-    private inline fun motor(name: String, crossinline apply: (MotorEx) -> Unit = {}) = name to lazy {
+    private fun motor(name: String) = name to lazy {
         MotorEx(hardwareMap, name).apply {
             setRunMode(Motor.RunMode.RawPower)
-            apply(this)
         }
     }
 
@@ -36,31 +35,22 @@ class Hardware(private val hardwareMap: HardwareMap) {
         motor("right_front"),
         motor("left_back"),
         motor("right_back"),
-        motor("up") {
-            it.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE)
-        },
+        motor("intake"),
 
         "outtake" to lazy { MotorGroup(
             MotorEx(hardwareMap, "outtake_l"),
             MotorEx(hardwareMap, "outtake_r").apply { inverted = true }
         ).apply { setRunMode(Motor.RunMode.RawPower) }}, // TODO: Change to velocity
 
-        motor("intake"),
         servo("upper_intake"),
+
         device<Servo>("feeder"),
-
-        device<GoBildaPinpointDriver>("odometry") {
-            it.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
-        },
-
-        device<Limelight3A>("limelight") {
-            it.pipelineSwitch(0)
-        }
+        device<GoBildaPinpointDriver>("odometry") { it.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD) },
+        device<Limelight3A>("limelight") { it.pipelineSwitch(0) }
     )
 
     inline operator fun <reified T> get(name: String): T {
         val device = devices[name]?.value ?: throw IllegalArgumentException("Couldn't find $name")
-
         return device as? T ?: throw IllegalArgumentException("$name is not ${T::class.simpleName}")
     }
 }
@@ -74,11 +64,8 @@ class Drive(hardware: Hardware): Subsystem {
     )
 
     @Suppress("unused")
-    var power = 1.0
-        set(value) {
-            drive.setMaxSpeed(value)
-            field = value
-        }
+    var power: Double = 1.0
+        set(value) { drive.setMaxSpeed(value); field = value }
 
     fun drive(gamepad: GamepadEx) {
         drive.driveRobotCentric(gamepad.leftX, gamepad.leftY, gamepad.rightX)
@@ -89,14 +76,12 @@ class Robot(hardwareMap: HardwareMap, gamepad1: Gamepad, gamepad2: Gamepad): Rob
     val hardware = Hardware(hardwareMap)
     val drive = Drive(hardware)
 
-    val gamepads = Pair(GamepadEx(gamepad1), GamepadEx(gamepad2))
+    val firstGamepad = GamepadEx(gamepad1); val secondGamepad = GamepadEx(gamepad2)
 
     private val limelight: Limelight3A = hardware["limelight"]
     private val odometry: GoBildaPinpointDriver = hardware["odometry"]
 
-    init {
-        register(drive)
-    }
+    init { register(drive) }
 
     fun start() {
         limelight.start()
@@ -106,7 +91,6 @@ class Robot(hardwareMap: HardwareMap, gamepad1: Gamepad, gamepad2: Gamepad): Rob
     fun loop() {
         limelight.updateRobotOrientation(odometry.getHeading(AngleUnit.DEGREES))
         odometry.update()
-
         run()
     }
 }
