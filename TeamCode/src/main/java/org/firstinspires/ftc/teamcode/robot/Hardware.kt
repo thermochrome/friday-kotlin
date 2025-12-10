@@ -4,6 +4,7 @@ import com.arcrobotics.ftclib.command.Robot
 import com.arcrobotics.ftclib.command.Subsystem
 import com.arcrobotics.ftclib.drivebase.MecanumDrive
 import com.arcrobotics.ftclib.gamepad.GamepadEx
+import com.arcrobotics.ftclib.hardware.SimpleServo
 import com.arcrobotics.ftclib.hardware.motors.CRServo
 import com.arcrobotics.ftclib.hardware.motors.Motor
 import com.arcrobotics.ftclib.hardware.motors.MotorEx
@@ -22,7 +23,7 @@ class Hardware(private val hardwareMap: HardwareMap) {
         }
     }
 
-    private fun servo(name: String) = name to lazy {
+    private fun continuousServo(name: String) = name to lazy {
         CRServo(hardwareMap, name)
     }
 
@@ -36,13 +37,12 @@ class Hardware(private val hardwareMap: HardwareMap) {
         motor("left_back"),
         motor("right_back"),
         motor("intake"),
-
         "outtake" to lazy { MotorGroup(
             MotorEx(hardwareMap, "outtake_l"),
             MotorEx(hardwareMap, "outtake_r").apply { inverted = true }
         ).apply { setRunMode(Motor.RunMode.RawPower) }}, // TODO: Change to velocity
 
-        servo("upper_intake"),
+        continuousServo("upper_intake"),
 
         device<Servo>("feeder"),
         device<GoBildaPinpointDriver>("odometry") { it.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD) },
@@ -91,6 +91,8 @@ class Robot(hardwareMap: HardwareMap, gamepad1: Gamepad, gamepad2: Gamepad): Rob
     fun loop() {
         limelight.updateRobotOrientation(odometry.getHeading(AngleUnit.DEGREES))
         odometry.update()
+
+        drive.drive(firstGamepad)
         run()
     }
 }

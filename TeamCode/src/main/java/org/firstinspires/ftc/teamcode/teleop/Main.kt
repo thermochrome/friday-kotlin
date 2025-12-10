@@ -116,6 +116,5 @@ class Main: OpMode() {
 
         telemetry.update()
         robot.loop()
-        robot.drive.drive(robot.firstGamepad)
     }
 }
