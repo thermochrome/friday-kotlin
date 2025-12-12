@@ -111,7 +111,7 @@ class Main: OpMode() {
         val result = robot.hardware.get<Limelight3A>("limelight").latestResult
 
         if (result.isValid) {
-            telemetry.addData("Pose", result.botpose.toString())
+            telemetry.addData("Heading", result.botpose.orientation.yaw)
         }
 
         telemetry.update()

@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.robot;
 
+import com.pedropathing.control.FilteredPIDFCoefficients;
+import com.pedropathing.control.PIDFCoefficients;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.follower.FollowerConstants;
 import com.pedropathing.ftc.FollowerBuilder;
@@ -16,7 +18,10 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .mass(11.5);
+            .mass(11.5)
+            .translationalPIDFCoefficients(new PIDFCoefficients(0.08, 0, 0.01, 0.025))
+            .headingPIDFCoefficients(new PIDFCoefficients(1, 0, 0.07, 0.03))
+            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.025, 0, 0.01, 0.06, 0.025));
 
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
 
@@ -45,8 +50,8 @@ public class Constants {
             .leftFrontMotorName("left_front")
             .leftFrontEncoderDirection(Encoder.FORWARD)
             .leftRearEncoderDirection(Encoder.FORWARD)
-            .rightFrontEncoderDirection(Encoder.FORWARD)
-            .rightRearEncoderDirection(Encoder.FORWARD)
+            .rightFrontEncoderDirection(Encoder.REVERSE)
+            .rightRearEncoderDirection(Encoder.REVERSE)
             .forwardTicksToInches(-11278.1544898575)
             .strafeTicksToInches(109227.0489229431)
             .turnTicksToInches(-0.9960116632638786);
