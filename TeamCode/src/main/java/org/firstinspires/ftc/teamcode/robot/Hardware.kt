@@ -4,7 +4,6 @@ import com.arcrobotics.ftclib.command.Robot
 import com.arcrobotics.ftclib.command.Subsystem
 import com.arcrobotics.ftclib.drivebase.MecanumDrive
 import com.arcrobotics.ftclib.gamepad.GamepadEx
-import com.arcrobotics.ftclib.hardware.SimpleServo
 import com.arcrobotics.ftclib.hardware.motors.CRServo
 import com.arcrobotics.ftclib.hardware.motors.Motor
 import com.arcrobotics.ftclib.hardware.motors.MotorEx
@@ -15,6 +14,7 @@ import com.qualcomm.robotcore.hardware.Gamepad
 import com.qualcomm.robotcore.hardware.HardwareMap
 import com.qualcomm.robotcore.hardware.Servo
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
+import kotlin.math.sqrt
 
 class Hardware(private val hardwareMap: HardwareMap) {
     private fun motor(name: String) = name to lazy {
@@ -94,5 +94,19 @@ class Robot(hardwareMap: HardwareMap, gamepad1: Gamepad, gamepad2: Gamepad): Rob
 
         drive.drive(firstGamepad)
         run()
+    }
+
+    fun tagDistances(): Map<Int, Double> {
+        val result = limelight.latestResult
+
+        return result.fiducialResults.associate { tag ->
+            val position = listOf(
+                tag.targetPoseCameraSpace.position.x,
+                tag.targetPoseCameraSpace.position.y,
+                tag.targetPoseCameraSpace.position.z
+            )
+
+            tag.fiducialId to sqrt(position.sumOf { d -> d * d })
+        }
     }
 }

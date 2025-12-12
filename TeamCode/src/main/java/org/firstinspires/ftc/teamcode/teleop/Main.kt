@@ -8,12 +8,10 @@ import com.arcrobotics.ftclib.gamepad.GamepadKeys
 import com.arcrobotics.ftclib.hardware.motors.CRServo
 import com.arcrobotics.ftclib.hardware.motors.MotorEx
 import com.arcrobotics.ftclib.hardware.motors.MotorGroup
-import com.qualcomm.hardware.limelightvision.Limelight3A
 import com.qualcomm.robotcore.eventloop.opmode.OpMode
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import com.qualcomm.robotcore.hardware.Servo
 import org.firstinspires.ftc.teamcode.robot.Robot
-import kotlin.math.sqrt
 
 enum class Activation {
     TOGGLE, PRESS, HELD
@@ -77,11 +75,13 @@ class Main: OpMode() {
             })) to Activation.PRESS,
 
             ButtonData(GamepadKeys.Button.DPAD_RIGHT, InstantCommand({
-                powers["outtake_power"]!![0] = powers["outtake_power"]!![1] + 0.05
+                powers["outtake_power"]!![1] = powers["outtake_power"]!![1] + 0.05
+                powers["outtake_power"]!![0] = powers["outtake_power"]!![1]
             })) to Activation.PRESS,
 
             ButtonData(GamepadKeys.Button.DPAD_LEFT, InstantCommand({
-                powers["outtake_power"]!![0] = powers["outtake_power"]!![1] - 0.05
+                powers["outtake_power"]!![1] = powers["outtake_power"]!![1] - 0.05
+                powers["outtake_power"]!![0] = powers["outtake_power"]!![1]
             })) to Activation.PRESS
         )
 
@@ -111,21 +111,8 @@ class Main: OpMode() {
 
         robot.hardware.get<MotorGroup>("outtake").set(powers["outtake_enabled"]!![0])
 
-        val result = robot.hardware.get<Limelight3A>("limelight").latestResult
-
-        if (result.fiducialResults.isNotEmpty()) {
-            result.fiducialResults.forEach { tag ->
-                val position = listOf(
-                    tag.targetPoseCameraSpace.position.x,
-                    tag.targetPoseCameraSpace.position.y,
-                    tag.targetPoseCameraSpace.position.z
-                )
-
-                val distance = sqrt(position.sumOf { d -> d * d })
-
-                telemetry.addData("${tag.fiducialId} Distance", distance)
-                telemetry.addData("${tag.fiducialId} Heading", tag.targetPoseCameraSpace.orientation.yaw)
-            }
+        robot.tagDistances().forEach { (tagId, distance) ->
+            telemetry.addData("$tagId Distance", distance)
         }
 
         telemetry.update()
