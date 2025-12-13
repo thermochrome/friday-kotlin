@@ -42,6 +42,8 @@ class Hardware(private val hardwareMap: HardwareMap) {
             MotorEx(hardwareMap, "outtake_r").apply { inverted = true }
         ).apply { setRunMode(Motor.RunMode.RawPower) }}, // TODO: Change to velocity
 
+        motor("up"),
+
         continuousServo("upper_intake"),
 
         device<Servo>("feeder"),

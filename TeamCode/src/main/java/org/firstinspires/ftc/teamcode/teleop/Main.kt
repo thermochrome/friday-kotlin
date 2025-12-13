@@ -8,6 +8,7 @@ import com.arcrobotics.ftclib.gamepad.GamepadKeys
 import com.arcrobotics.ftclib.hardware.motors.CRServo
 import com.arcrobotics.ftclib.hardware.motors.MotorEx
 import com.arcrobotics.ftclib.hardware.motors.MotorGroup
+import com.qualcomm.hardware.limelightvision.Limelight3A
 import com.qualcomm.robotcore.eventloop.opmode.OpMode
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import com.qualcomm.robotcore.hardware.Servo
@@ -29,7 +30,7 @@ class Main: OpMode() {
     private lateinit var robot: Robot
 
     private var powers = mutableMapOf(
-        "outtake_power" to arrayOf(1.0, 1.0)
+        "outtake_power" to 0.75
     )
 
     override fun init() {
@@ -38,11 +39,11 @@ class Main: OpMode() {
         val buttons = mapOf(
             ButtonData(GamepadKeys.Button.X,
                 activated = InstantCommand({
-                    powers["outtake_power"]!![0] = powers["outtake_power"]!![1]
+                    powers["outtake_power"] = 0.75 /* powers["outtake_power"]!![1] */
                 }),
 
                 deactivated = InstantCommand({
-                    powers["outtake_power"]!![0] = 0.0
+                    powers["outtake_power"] = 0.0
                 })
             ) to Activation.TOGGLE,
 
@@ -66,22 +67,36 @@ class Main: OpMode() {
                 })
             ) to Activation.TOGGLE,
 
+            ButtonData(GamepadKeys.Button.DPAD_UP,
+                InstantCommand({
+                    robot.hardware.get<MotorEx>("up").set(1.0)
+                }),
+
+                InstantCommand({
+                    robot.hardware.get<MotorEx>("up").set(0.0)
+                }),
+
+                gamepad = robot.firstGamepad
+            ) to Activation.HELD,
+
+            ButtonData(GamepadKeys.Button.DPAD_DOWN,
+                InstantCommand({
+                    robot.hardware.get<MotorEx>("up").set(-1.0)
+                }),
+
+                InstantCommand({
+                    robot.hardware.get<MotorEx>("up").set(0.0)
+                }),
+
+                gamepad = robot.firstGamepad
+            ) to Activation.HELD,
+
             ButtonData(GamepadKeys.Button.DPAD_UP, InstantCommand({
                 robot.hardware.get<Servo>("feeder").position = (45.0 / 57.2958)
             })) to Activation.PRESS,
 
             ButtonData(GamepadKeys.Button.DPAD_DOWN, InstantCommand({
                 robot.hardware.get<Servo>("feeder").position = (22.0 / 57.2958)
-            })) to Activation.PRESS,
-
-            ButtonData(GamepadKeys.Button.DPAD_RIGHT, InstantCommand({
-                powers["outtake_power"]!![1] = powers["outtake_power"]!![1] + 0.05
-                powers["outtake_power"]!![0] = powers["outtake_power"]!![1]
-            })) to Activation.PRESS,
-
-            ButtonData(GamepadKeys.Button.DPAD_LEFT, InstantCommand({
-                powers["outtake_power"]!![1] = powers["outtake_power"]!![1] - 0.05
-                powers["outtake_power"]!![0] = powers["outtake_power"]!![1]
             })) to Activation.PRESS
         )
 
@@ -107,13 +122,19 @@ class Main: OpMode() {
 
     override fun loop() {
         telemetry.addData("RPM", robot.hardware.get<MotorGroup>("outtake").velocity * 60 / 103.8)
-        telemetry.addData("Power", powers["outtake_power"])
-
-        robot.hardware.get<MotorGroup>("outtake").set(powers["outtake_enabled"]!![0])
 
         robot.tagDistances().forEach { (tagId, distance) ->
             telemetry.addData("$tagId Distance", distance)
         }
+
+        val limelight: Limelight3A = robot.hardware["limelight"]
+
+        if (limelight.latestResult.isValid) {
+            telemetry.addData("Heading", limelight.latestResult.fiducialResults[0].targetPoseCameraSpace.position.x)
+        }
+
+        val tagDistance = robot.tagDistances()[20] ?: powers["outtake_power"]!!
+        robot.hardware.get<MotorGroup>("outtake").set(0.119219 * tagDistance + 0.611507)
 
         telemetry.update()
         robot.loop()
