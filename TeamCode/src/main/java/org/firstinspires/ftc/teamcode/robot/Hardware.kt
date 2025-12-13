@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.robot
 
-import com.arcrobotics.ftclib.command.Robot
 import com.arcrobotics.ftclib.command.Subsystem
 import com.arcrobotics.ftclib.drivebase.MecanumDrive
 import com.arcrobotics.ftclib.gamepad.GamepadEx
@@ -10,11 +9,13 @@ import com.arcrobotics.ftclib.hardware.motors.MotorEx
 import com.arcrobotics.ftclib.hardware.motors.MotorGroup
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver
 import com.qualcomm.hardware.limelightvision.Limelight3A
-import com.qualcomm.robotcore.hardware.Gamepad
+import com.qualcomm.robotcore.eventloop.opmode.Disabled
+import com.qualcomm.robotcore.eventloop.opmode.OpMode
 import com.qualcomm.robotcore.hardware.HardwareMap
 import com.qualcomm.robotcore.hardware.Servo
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
-import kotlin.math.sqrt
+
+// TODO: Centralize controls for the robot somewhere. Too much noise in the OpMode.
 
 class Hardware(private val hardwareMap: HardwareMap) {
     private fun motor(name: String) = name to lazy {
@@ -58,7 +59,7 @@ class Hardware(private val hardwareMap: HardwareMap) {
 }
 
 class Drive(hardware: Hardware): Subsystem {
-    val drive = MecanumDrive(
+    val mecanumDrive = MecanumDrive(
         hardware.get<MotorEx>("left_front"),
         hardware.get<MotorEx>("right_front"),
         hardware.get<MotorEx>("left_back"),
@@ -67,54 +68,49 @@ class Drive(hardware: Hardware): Subsystem {
 
     @Suppress("unused")
     var power: Double = 1.0
-        set(value) { drive.setMaxSpeed(value); field = value }
-
-    fun drive(gamepad: GamepadEx) {
-        drive.driveRobotCentric(gamepad.leftX, gamepad.leftY, gamepad.rightX)
-    }
+        set(value) { mecanumDrive.setMaxSpeed(value); field = value }
 }
 
-class Robot(hardwareMap: HardwareMap, gamepad1: Gamepad, gamepad2: Gamepad): Robot() {
-    val hardware = Hardware(hardwareMap)
-    val drive = Drive(hardware)
+@Disabled
+open class OpDevices(val field: Boolean = false): OpMode() {
+    protected lateinit var hardware: Hardware
+    protected lateinit var drive: Drive
 
-    val firstGamepad = GamepadEx(gamepad1); val secondGamepad = GamepadEx(gamepad2)
+    protected lateinit var firstGamepad: GamepadEx
+    protected lateinit var secondGamepad: GamepadEx
 
-    private val limelight: Limelight3A = hardware["limelight"]
-    private val odometry: GoBildaPinpointDriver = hardware["odometry"]
+    internal val limelight: Limelight3A = hardware["limelight"]
+    internal val odometry: GoBildaPinpointDriver = hardware["odometry"]
 
-    init { register(drive) }
+    private fun drive(gamepad: GamepadEx) {
+        if (field) {
+            drive.mecanumDrive.driveFieldCentric(gamepad.leftX, gamepad.leftY, gamepad.rightX,
+                odometry.getHeading(AngleUnit.DEGREES)
+            )
+        } else {
+            drive.mecanumDrive.driveRobotCentric(gamepad.leftX, gamepad.leftY, gamepad.rightX)
+        }
+    }
 
-    fun start() {
+    override fun init() {
+        hardware = Hardware(hardwareMap)
+        drive = Drive(hardware)
+
+        firstGamepad = GamepadEx(gamepad1)
+        secondGamepad = GamepadEx(gamepad2)
+    }
+
+    override fun start() {
         limelight.start()
         odometry.resetPosAndIMU()
     }
 
-    fun loop(field: Boolean = false) {
+    override fun loop() {
         limelight.updateRobotOrientation(odometry.getHeading(AngleUnit.DEGREES))
         odometry.update()
 
-        if (field) {
-            drive.drive.driveFieldCentric(firstGamepad.leftX, firstGamepad.leftY, firstGamepad.rightX,
-                odometry.getHeading(AngleUnit.DEGREES))
-        } else {
-            drive.drive(firstGamepad)
-        }
+        drive(firstGamepad)
 
-        run()
-    }
-
-    fun tagDistances(): Map<Int, Double> {
-        val result = limelight.latestResult
-
-        return result.fiducialResults.associate { tag ->
-            val position = listOf(
-                tag.targetPoseCameraSpace.position.x,
-                tag.targetPoseCameraSpace.position.y,
-                tag.targetPoseCameraSpace.position.z
-            )
-
-            tag.fiducialId to sqrt(position.sumOf { d -> d * d })
-        }
+        telemetry.update()
     }
 }
