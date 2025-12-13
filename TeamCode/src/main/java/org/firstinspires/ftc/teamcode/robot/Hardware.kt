@@ -40,7 +40,7 @@ class Hardware(private val hardwareMap: HardwareMap) {
         "outtake" to lazy { MotorGroup(
             MotorEx(hardwareMap, "outtake_l"),
             MotorEx(hardwareMap, "outtake_r").apply { inverted = true }
-        ).apply { setRunMode(Motor.RunMode.RawPower) }}, // TODO: Change to velocity
+        ).apply { setRunMode(Motor.RunMode.RawPower) }},
 
         motor("up"),
 
@@ -90,11 +90,17 @@ class Robot(hardwareMap: HardwareMap, gamepad1: Gamepad, gamepad2: Gamepad): Rob
         odometry.resetPosAndIMU()
     }
 
-    fun loop() {
+    fun loop(field: Boolean = false) {
         limelight.updateRobotOrientation(odometry.getHeading(AngleUnit.DEGREES))
         odometry.update()
 
-        drive.drive(firstGamepad)
+        if (field) {
+            drive.drive.driveFieldCentric(firstGamepad.leftX, firstGamepad.leftY, firstGamepad.rightX,
+                odometry.getHeading(AngleUnit.DEGREES))
+        } else {
+            drive.drive(firstGamepad)
+        }
+
         run()
     }
 

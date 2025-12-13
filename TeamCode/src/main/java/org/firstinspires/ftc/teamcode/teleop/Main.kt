@@ -123,18 +123,26 @@ class Main: OpMode() {
     override fun loop() {
         telemetry.addData("RPM", robot.hardware.get<MotorGroup>("outtake").velocity * 60 / 103.8)
 
+        var minimumDistance = Double.MAX_VALUE
         robot.tagDistances().forEach { (tagId, distance) ->
             telemetry.addData("$tagId Distance", distance)
+
+            if (distance < minimumDistance) {
+                minimumDistance = distance
+            }
         }
+
+        if (minimumDistance == Double.MAX_VALUE) {
+            minimumDistance = 0.0
+        }
+
+        robot.hardware.get<MotorGroup>("outtake").set(0.119219 * minimumDistance + 0.611507)
 
         val limelight: Limelight3A = robot.hardware["limelight"]
 
         if (limelight.latestResult.isValid) {
             telemetry.addData("Heading", limelight.latestResult.fiducialResults[0].targetPoseCameraSpace.position.x)
         }
-
-        val tagDistance = robot.tagDistances()[20] ?: powers["outtake_power"]!!
-        robot.hardware.get<MotorGroup>("outtake").set(0.119219 * tagDistance + 0.611507)
 
         telemetry.update()
         robot.loop()
