@@ -2,16 +2,19 @@ package org.firstinspires.ftc.teamcode.teleop
 
 import com.arcrobotics.ftclib.command.Command
 import com.arcrobotics.ftclib.command.InstantCommand
+import com.arcrobotics.ftclib.command.SequentialCommandGroup
+import com.arcrobotics.ftclib.command.WaitCommand
 import com.arcrobotics.ftclib.command.button.GamepadButton
 import com.arcrobotics.ftclib.gamepad.GamepadEx
 import com.arcrobotics.ftclib.gamepad.GamepadKeys
+import com.arcrobotics.ftclib.hardware.SimpleServo
 import com.arcrobotics.ftclib.hardware.motors.CRServo
 import com.arcrobotics.ftclib.hardware.motors.MotorEx
 import com.arcrobotics.ftclib.hardware.motors.MotorGroup
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver
 import com.qualcomm.hardware.limelightvision.Limelight3A
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
-import com.qualcomm.robotcore.hardware.Servo
-import com.qualcomm.robotcore.util.ElapsedTime
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
 import org.firstinspires.ftc.teamcode.robot.OpDevices
 import kotlin.math.sqrt
 
@@ -26,11 +29,17 @@ data class ButtonData(
     val gamepad: GamepadEx? = null
 )
 
-@Suppress("unused") @TeleOp
+@TeleOp @Suppress("unused")
 class Main: OpDevices() {
     private var powers = mutableMapOf(
         "outtake_power" to 0.75
     )
+
+    private fun drive(gamepad: GamepadEx) {
+        drive.driveFieldCentric(gamepad.leftX, gamepad.leftY, gamepad.rightX,
+            hardware.get<GoBildaPinpointDriver>("odometry").getHeading(AngleUnit.DEGREES)
+        )
+    }
 
     override fun init() {
         super.init()
@@ -52,13 +61,13 @@ class Main: OpDevices() {
                 }),
 
                 deactivated = InstantCommand({
-                    hardware.get<MotorEx>("intake").set(0.0)
+                    hardware.get<MotorEx>("intake").disable()
                 })
             ) to Activation.TOGGLE,
 
             ButtonData(GamepadKeys.Button.Y,
                 activated = InstantCommand({
-                    hardware.get<CRServo>("upper_intake").set(-1.0)
+                    hardware.get<CRServo>("upper_intake").set(1.0)
                 }),
 
                 deactivated = InstantCommand({
@@ -80,7 +89,7 @@ class Main: OpDevices() {
 
             ButtonData(GamepadKeys.Button.DPAD_DOWN,
                 InstantCommand({
-                    hardware.get<MotorEx>("up").set(-1.0)
+                    hardware.get<MotorEx>("up").set(1.0)
                 }),
 
                 InstantCommand({
@@ -90,15 +99,17 @@ class Main: OpDevices() {
                 gamepad = firstGamepad
             ) to Activation.HELD,
 
-            ButtonData(GamepadKeys.Button.DPAD_UP, InstantCommand({
-                val time = ElapsedTime()
+            ButtonData(GamepadKeys.Button.DPAD_UP, SequentialCommandGroup(
+                InstantCommand({
+                    hardware.get<SimpleServo>("feeder").position = 1.0
+                }),
 
-                hardware.get<Servo>("feeder").position = (45.0 / 57.2958)
+                WaitCommand(600),
 
-                if (time.milliseconds() >= 600) {
-                    hardware.get<Servo>("feeder").position = (22.0 / 57.2958)
-                }
-            })) to Activation.PRESS,
+                InstantCommand({
+                    hardware.get<SimpleServo>("feeder").position = 0.0
+                }),
+            )) to Activation.PRESS,
 
 //            ButtonData(GamepadKeys.Button.DPAD_DOWN, InstantCommand({
 //                robot.hardware.get<Servo>("feeder").position = (22.0 / 57.2958)
@@ -123,6 +134,7 @@ class Main: OpDevices() {
 
     override fun loop() {
         super.loop()
+        drive(firstGamepad)
 
         val limelight: Limelight3A = hardware["limelight"]
         telemetry.addData("RPM", hardware.get<MotorGroup>("outtake").velocity * 60 / 103.8)
@@ -149,7 +161,7 @@ class Main: OpDevices() {
             minimumDistance = 0.0
         }
 
-        hardware.get<MotorGroup>("outtake").set(0.119219 * minimumDistance + 0.611507)
+        hardware.get<MotorGroup>("outtake").set(0.119219 * minimumDistance + 0.661507)
 
         if (limelight.latestResult.isValid) {
             telemetry.addData("Heading", limelight.latestResult.fiducialResults[0].targetPoseCameraSpace.position.x)

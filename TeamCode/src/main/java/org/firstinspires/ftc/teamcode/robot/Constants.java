@@ -6,8 +6,6 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.follower.FollowerConstants;
 import com.pedropathing.ftc.FollowerBuilder;
 import com.pedropathing.ftc.drivetrains.MecanumConstants;
-import com.pedropathing.ftc.localization.Encoder;
-import com.pedropathing.ftc.localization.constants.DriveEncoderConstants;
 import com.pedropathing.ftc.localization.constants.PinpointConstants;
 import com.pedropathing.paths.PathConstraints;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
@@ -21,7 +19,7 @@ public class Constants {
             .mass(11.5)
             .translationalPIDFCoefficients(new PIDFCoefficients(0.08, 0, 0.01, 0.025))
             .headingPIDFCoefficients(new PIDFCoefficients(1, 0, 0.07, 0.03))
-            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.025, 0, 0.01, 0.06, 0.025));
+            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.02, 0, 0.01, 0.06, 0.02));
 
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
 
@@ -30,7 +28,6 @@ public class Constants {
                 .pathConstraints(pathConstraints)
                 .mecanumDrivetrain(driveConstants)
                 .pinpointLocalizer(localizerConstants)
-                .driveEncoderLocalizer(encoderConstants)
                 .build();
     }
 
@@ -42,19 +39,6 @@ public class Constants {
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
             .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED)
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED);
-
-    public static DriveEncoderConstants encoderConstants = new DriveEncoderConstants()
-            .rightFrontMotorName("right_front")
-            .rightRearMotorName("right_back")
-            .leftRearMotorName("left_back")
-            .leftFrontMotorName("left_front")
-            .leftFrontEncoderDirection(Encoder.FORWARD)
-            .leftRearEncoderDirection(Encoder.FORWARD)
-            .rightFrontEncoderDirection(Encoder.REVERSE)
-            .rightRearEncoderDirection(Encoder.REVERSE)
-            .forwardTicksToInches(-11278.1544898575)
-            .strafeTicksToInches(109227.0489229431)
-            .turnTicksToInches(-0.9960116632638786);
 
     public static MecanumConstants driveConstants = new MecanumConstants()
             .maxPower(1)

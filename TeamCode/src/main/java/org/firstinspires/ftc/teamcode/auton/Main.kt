@@ -12,7 +12,7 @@ import com.qualcomm.robotcore.hardware.CRServo
 import com.qualcomm.robotcore.hardware.Servo
 import org.firstinspires.ftc.teamcode.robot.Constants
 
-@Autonomous(name = "BLUE")
+@Autonomous(name = "BLUE") @Suppress("unused")
 class MainAuto : OpMode() {
 
     // Hardware
