@@ -22,10 +22,6 @@ class Hardware(private val hardwareMap: HardwareMap) {
     /**
      * A factory function to create a device.
      *
-     * ```
-     * make("name", { hardwareMap.get(Device::class.java, it) })
-     * ```
-     *
      * @param T The type of device.
      * @param name The name of the device.
      * @param factory A lambda of the creation of the device's class.
@@ -55,10 +51,11 @@ class Hardware(private val hardwareMap: HardwareMap) {
         motor("right_back"),
 
         motor("intake"),
-        "outtake" to lazy { MotorGroup(
+
+        make("outtake", { MotorGroup(
             MotorEx(hardwareMap, "outtake_l"),
-            MotorEx(hardwareMap, "outtake_r").apply { inverted = true }
-        ).apply { setRunMode(Motor.RunMode.RawPower) }},
+            MotorEx(hardwareMap, "outtake_r").apply { inverted = true })},
+            { setRunMode(Motor.RunMode.RawPower) }),
 
         motor("up") { inverted = true },
 
@@ -99,8 +96,7 @@ open class OpDevices(): OpMode() {
             hardware.get<MotorEx>("left_front"),
             hardware.get<MotorEx>("right_front"),
             hardware.get<MotorEx>("left_back"),
-            hardware.get<MotorEx>("right_back")
-        )
+            hardware.get<MotorEx>("right_back"))
 
         firstGamepad = GamepadEx(gamepad1)
         secondGamepad = GamepadEx(gamepad2)
