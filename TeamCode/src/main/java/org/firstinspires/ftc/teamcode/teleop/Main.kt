@@ -1,10 +1,8 @@
 package org.firstinspires.ftc.teamcode.teleop
 
-import com.arcrobotics.ftclib.command.Command
 import com.arcrobotics.ftclib.command.InstantCommand
 import com.arcrobotics.ftclib.command.SequentialCommandGroup
 import com.arcrobotics.ftclib.command.WaitCommand
-import com.arcrobotics.ftclib.command.button.GamepadButton
 import com.arcrobotics.ftclib.gamepad.GamepadEx
 import com.arcrobotics.ftclib.gamepad.GamepadKeys
 import com.arcrobotics.ftclib.hardware.SimpleServo
@@ -15,19 +13,14 @@ import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver
 import com.qualcomm.hardware.limelightvision.Limelight3A
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
+import org.firstinspires.ftc.teamcode.robot.ButtonData
 import org.firstinspires.ftc.teamcode.robot.OpDevices
+import org.firstinspires.ftc.teamcode.robot.registerControls
 import kotlin.math.sqrt
 
 enum class Activation {
     TOGGLE, PRESS, HELD
 }
-
-data class ButtonData(
-    val key: GamepadKeys.Button,
-    val activated: Command,
-    val deactivated: Command? = null,
-    val gamepad: GamepadEx? = null
-)
 
 @TeleOp @Suppress("unused")
 class Main: OpDevices() {
@@ -44,8 +37,8 @@ class Main: OpDevices() {
     override fun init() {
         super.init()
 
-        val buttons = mapOf(
-            ButtonData(GamepadKeys.Button.X,
+        val buttons = listOf(
+            ButtonData(GamepadKeys.Button.X, Activation.TOGGLE,
                 activated = InstantCommand({
                     powers["outtake_power"] = 0.75 /* powers["outtake_power"]!![1] */
                 }),
@@ -53,19 +46,19 @@ class Main: OpDevices() {
                 deactivated = InstantCommand({
                     powers["outtake_power"] = 0.0
                 })
-            ) to Activation.TOGGLE,
+            ),
 
-            ButtonData(GamepadKeys.Button.A,
+            ButtonData(GamepadKeys.Button.A, Activation.TOGGLE,
                 activated = InstantCommand({
                     hardware.get<MotorEx>("intake").set(1.0)
                 }),
 
                 deactivated = InstantCommand({
-                    hardware.get<MotorEx>("intake").disable()
+                    hardware.get<MotorEx>("intake").set(0.0)
                 })
-            ) to Activation.TOGGLE,
+            ),
 
-            ButtonData(GamepadKeys.Button.Y,
+            ButtonData(GamepadKeys.Button.Y, Activation.TOGGLE,
                 activated = InstantCommand({
                     hardware.get<CRServo>("upper_intake").set(1.0)
                 }),
@@ -73,9 +66,9 @@ class Main: OpDevices() {
                 deactivated = InstantCommand({
                     hardware.get<CRServo>("upper_intake").set(0.0)
                 })
-            ) to Activation.TOGGLE,
+            ),
 
-            ButtonData(GamepadKeys.Button.DPAD_UP,
+            ButtonData(GamepadKeys.Button.DPAD_UP, Activation.HELD,
                 InstantCommand({
                     hardware.get<MotorEx>("up").set(1.0)
                 }),
@@ -85,9 +78,9 @@ class Main: OpDevices() {
                 }),
 
                 gamepad = firstGamepad
-            ) to Activation.HELD,
+            ),
 
-            ButtonData(GamepadKeys.Button.DPAD_DOWN,
+            ButtonData(GamepadKeys.Button.DPAD_DOWN, Activation.HELD,
                 InstantCommand({
                     hardware.get<MotorEx>("up").set(1.0)
                 }),
@@ -97,39 +90,18 @@ class Main: OpDevices() {
                 }),
 
                 gamepad = firstGamepad
-            ) to Activation.HELD,
+            ),
 
-            ButtonData(GamepadKeys.Button.DPAD_UP, SequentialCommandGroup(
-                InstantCommand({
-                    hardware.get<SimpleServo>("feeder").position = 1.0
-                }),
+            ButtonData(GamepadKeys.Button.DPAD_UP, Activation.PRESS, SequentialCommandGroup(
+                InstantCommand({  hardware.get<SimpleServo>("feeder").position = 1.0 }),
 
                 WaitCommand(600),
 
-                InstantCommand({
-                    hardware.get<SimpleServo>("feeder").position = 0.0
-                }),
-            )) to Activation.PRESS,
-
-//            ButtonData(GamepadKeys.Button.DPAD_DOWN, InstantCommand({
-//                robot.hardware.get<Servo>("feeder").position = (22.0 / 57.2958)
-//            })) to Activation.PRESS
+                InstantCommand({ hardware.get<SimpleServo>("feeder").position = 0.0 }),
+            ))
         )
 
-        buttons.forEach { (buttonData, activation) ->
-            val button = GamepadButton(buttonData.gamepad ?: secondGamepad, buttonData.key)
-
-            when (activation) {
-                Activation.TOGGLE -> button.toggleWhenPressed(
-                    buttonData.activated,
-                    buttonData.deactivated
-                )
-
-                Activation.PRESS -> button.whenPressed(buttonData.activated)
-
-                Activation.HELD -> button.whenPressed(buttonData.activated).whenReleased(buttonData.deactivated)
-            }
-        }
+        registerControls(buttons, secondGamepad)
     }
 
     override fun loop() {

@@ -14,7 +14,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
 private typealias Applicant<T> = T.() -> Unit
 
 /**
- * A class containing all hardware devices on the robot.
+ * A class containing all devices on the robot.
  *
  * @property hardwareMap The hardware map to pull all devices from.
  */
@@ -22,14 +22,22 @@ class Hardware(private val hardwareMap: HardwareMap) {
     /**
      * A factory function to create a device.
      *
+     * ```
+     * make("name", { hardwareMap.get(Device::class.java, it) })
+     * ```
+     *
      * @param T The type of device.
      * @param name The name of the device.
      * @param factory A lambda of the creation of the device's class.
      * @param apply Any configurations to the device.
+     * @return A `Pair` of the name and the lazily created device.
      */
-    private inline fun <reified T> make(name: String, noinline factory: () -> T, crossinline apply: Applicant<T> = {}) = name to lazy {
-        factory().apply { apply(this) }
+    private inline fun <reified T> make(name: String, noinline factory: (String) -> T, crossinline apply: Applicant<T> = {}) = name to lazy {
+        factory(name).apply { apply(this) }
     }
+
+    private inline fun <reified T> device(name: String, crossinline apply: Applicant<T> = {}) = make(name,
+        { hardwareMap.get(T::class.java, name) }, apply)
 
     private fun motor(name: String, apply: Applicant<MotorEx> = {}) = make(name,
         { MotorEx(hardwareMap, name) }, { setRunMode(Motor.RunMode.RawPower); apply() })
@@ -39,9 +47,6 @@ class Hardware(private val hardwareMap: HardwareMap) {
 
     private fun servo(name: String, apply: Applicant<SimpleServo> = {}) = make(name,
         { SimpleServo(hardwareMap, name, 0.0, 360.0) }, apply)
-
-    private inline fun <reified T> device(name: String, noinline apply: Applicant<T> = {}) = make(name,
-        { hardwareMap.get(T::class.java, name) }, apply)
 
     val devices = mapOf(
         motor("left_front"),
