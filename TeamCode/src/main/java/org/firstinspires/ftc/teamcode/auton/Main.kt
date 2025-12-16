@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.auton
 
-import com.arcrobotics.ftclib.hardware.motors.Motor
+import com.arcrobotics.ftclib.hardware.SimpleServo
+import com.arcrobotics.ftclib.hardware.motors.CRServo
+import com.arcrobotics.ftclib.hardware.motors.MotorGroup
 import com.pedropathing.follower.Follower
 import com.pedropathing.geometry.BezierLine
 import com.pedropathing.geometry.Pose
@@ -8,18 +10,15 @@ import com.pedropathing.paths.PathChain
 import com.pedropathing.util.Timer
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous
 import com.qualcomm.robotcore.eventloop.opmode.OpMode
-import com.qualcomm.robotcore.hardware.CRServo
-import com.qualcomm.robotcore.hardware.Servo
 import org.firstinspires.ftc.teamcode.robot.Constants
+import org.firstinspires.ftc.teamcode.robot.Hardware
+import kotlin.time.Duration.Companion.seconds
 
 @Autonomous(name = "BLUE") @Suppress("unused")
 class MainAuto : OpMode() {
 
     // Hardware
-    private lateinit var right: Motor
-    private lateinit var left: Motor
-    private lateinit var feeder: CRServo
-    private lateinit var pusher: Servo
+    private lateinit var hardware: Hardware
 
     // Pathing
     private lateinit var follower: Follower
@@ -83,15 +82,13 @@ class MainAuto : OpMode() {
             }
 
             PathState.CURRYONTHETHREE -> {
-                right.set(-0.75)
-                left.set(0.75)
-                feeder.power = 1.0
-                pusher.position = 45.0 / 57.2958
+                hardware.get<MotorGroup>("outtake").set(0.75)
+                hardware.get<CRServo>("upper_intake").set(1.0)
+                hardware.get<SimpleServo>("feeder").position = 1.0 // 45.0 / 57.2958
 
-                if (!follower.isBusy && pathTimer.elapsedTime > 5) {
-                    pusher.position = 22.0 / 57.2958
-                    right.set(0.0)
-                    left.set(0.0)
+                if (!follower.isBusy && pathTimer.elapsedTime.seconds > 2.seconds) {
+                    hardware.get<SimpleServo>("feeder").position = 0.0 // 22.0 / 57.2958
+                    hardware.get<MotorGroup>("outtake").set(0.0)
                     pathState = PathState.SHOOT_LEAVE
                 }
             }
@@ -108,11 +105,7 @@ class MainAuto : OpMode() {
     }
 
     override fun init() {
-        // Hardware init
-        right = Motor(hardwareMap, "outtake_r")
-        left = Motor(hardwareMap, "outtake_l")
-        feeder = hardwareMap.get(CRServo::class.java, "upper_intake")
-        pusher = hardwareMap.get(Servo::class.java, "feeder")
+        hardware = Hardware(hardwareMap)
 
         // Pathing + timers
         follower = Constants.createFollower(hardwareMap)

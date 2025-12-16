@@ -80,7 +80,7 @@ class Hardware(private val hardwareMap: HardwareMap) {
 }
 
 @Disabled
-open class OpDevices(): OpMode() {
+open class Setup(): OpMode() {
     protected lateinit var hardware: Hardware
     protected lateinit var drive: MecanumDrive
 

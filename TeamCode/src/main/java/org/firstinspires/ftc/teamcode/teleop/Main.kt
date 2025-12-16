@@ -14,7 +14,7 @@ import com.qualcomm.hardware.limelightvision.Limelight3A
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
 import org.firstinspires.ftc.teamcode.robot.ButtonData
-import org.firstinspires.ftc.teamcode.robot.OpDevices
+import org.firstinspires.ftc.teamcode.robot.Setup
 import org.firstinspires.ftc.teamcode.robot.registerControls
 import kotlin.math.sqrt
 
@@ -23,7 +23,7 @@ enum class Activation {
 }
 
 @TeleOp @Suppress("unused")
-class Main: OpDevices() {
+class Main: Setup() {
     private var powers = mutableMapOf(
         "outtake_power" to 0.75
     )
@@ -93,7 +93,7 @@ class Main: OpDevices() {
             ),
 
             ButtonData(GamepadKeys.Button.DPAD_UP, Activation.PRESS, SequentialCommandGroup(
-                InstantCommand({  hardware.get<SimpleServo>("feeder").position = 1.0 }),
+                InstantCommand({ hardware.get<SimpleServo>("feeder").position = 1.0 }),
 
                 WaitCommand(600),
 
