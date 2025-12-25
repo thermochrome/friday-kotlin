@@ -1,12 +1,16 @@
 package org.firstinspires.ftc.teamcode.teleop
 
+import com.arcrobotics.ftclib.command.CommandScheduler
 import com.arcrobotics.ftclib.command.InstantCommand
+import com.arcrobotics.ftclib.command.RunCommand
 import com.arcrobotics.ftclib.command.SequentialCommandGroup
 import com.arcrobotics.ftclib.command.WaitCommand
+import com.arcrobotics.ftclib.command.button.GamepadButton
 import com.arcrobotics.ftclib.gamepad.GamepadEx
 import com.arcrobotics.ftclib.gamepad.GamepadKeys
 import com.arcrobotics.ftclib.hardware.SimpleServo
 import com.arcrobotics.ftclib.hardware.motors.CRServo
+import com.arcrobotics.ftclib.hardware.motors.Motor
 import com.arcrobotics.ftclib.hardware.motors.MotorEx
 import com.arcrobotics.ftclib.hardware.motors.MotorGroup
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver
@@ -40,11 +44,11 @@ class Main: Setup() {
         val buttons = listOf(
             ButtonData(GamepadKeys.Button.X, Activation.TOGGLE,
                 activated = InstantCommand({
-                    powers["outtake_power"] = 0.75 /* powers["outtake_power"]!![1] */
+                    powers["outtake_power"] = -100.0 / 1620.0 /* powers["outtake_power"]!![1] */
                 }),
 
                 deactivated = InstantCommand({
-                    powers["outtake_power"] = 0.0
+                    powers["outtake_power"] = -400.0 / 1620.0
                 })
             ),
 
@@ -98,42 +102,71 @@ class Main: Setup() {
                 WaitCommand(600),
 
                 InstantCommand({ hardware.get<SimpleServo>("feeder").position = 0.0 }),
-            ))
+            )),
+
+//            ButtonData(GamepadKeys.Button.B, Activation.TOGGLE,
+//                InstantCommand({
+//                    val outtake: MotorGroup = hardware["outtake"]
+//
+//                    outtake.set(100.0 / 1620.0)
+//                }),
+//
+//                InstantCommand({
+//                    val outtake: MotorGroup = hardware["outtake"]
+//
+//                    outtake.set(400.0 / 1620.0)
+//                }),
+//            )
         )
 
-        registerControls(buttons, secondGamepad)
+        buttons.forEach {
+            val button = GamepadButton(it.gamepad ?: secondGamepad, it.key)
+
+            when (it.activation) {
+                Activation.TOGGLE ->
+                    button.toggleWhenPressed(it.activated, it.deactivated)
+
+                Activation.PRESS ->
+                    button.whenPressed(it.activated)
+
+                Activation.HELD ->
+                    button.whenPressed(it.activated).whenReleased(it.deactivated)
+            }
+        }
     }
 
     override fun loop() {
         super.loop()
         drive(firstGamepad)
 
+        CommandScheduler.getInstance().run()
+
         val limelight: Limelight3A = hardware["limelight"]
         telemetry.addData("RPM", hardware.get<MotorGroup>("outtake").velocity * 60 / 103.8)
 
-        var minimumDistance = Double.MAX_VALUE
+//        var minimumDistance = Double.MAX_VALUE
+//
+//        limelight.latestResult.fiducialResults.associate { tag ->
+//            val position = listOf(
+//                tag.targetPoseCameraSpace.position.x,
+//                tag.targetPoseCameraSpace.position.y,
+//                tag.targetPoseCameraSpace.position.z
+//            )
+//
+//            tag.fiducialId to sqrt(position.sumOf { d -> d * d })
+//        }.forEach { (tagId, distance) ->
+//            telemetry.addData("$tagId Distance", distance)
+//
+//            if (distance < minimumDistance) {
+//                minimumDistance = distance
+//            }
+//        }
+//
+//        if (minimumDistance == Double.MAX_VALUE) {
+//            minimumDistance = 0.0
+//        }
 
-        limelight.latestResult.fiducialResults.associate { tag ->
-            val position = listOf(
-                tag.targetPoseCameraSpace.position.x,
-                tag.targetPoseCameraSpace.position.y,
-                tag.targetPoseCameraSpace.position.z
-            )
-
-            tag.fiducialId to sqrt(position.sumOf { d -> d * d })
-        }.forEach { (tagId, distance) ->
-            telemetry.addData("$tagId Distance", distance)
-
-            if (distance < minimumDistance) {
-                minimumDistance = distance
-            }
-        }
-
-        if (minimumDistance == Double.MAX_VALUE) {
-            minimumDistance = 0.0
-        }
-
-        hardware.get<MotorGroup>("outtake").set(0.119219 * minimumDistance + 0.661507)
+        hardware.get<MotorGroup>("outtake").set(1.0) /* 0.119219 * minimumDistance + 0.661507 */
 
         if (limelight.latestResult.isValid) {
             telemetry.addData("Heading", limelight.latestResult.fiducialResults[0].targetPoseCameraSpace.position.x)

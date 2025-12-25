@@ -35,6 +35,8 @@ class MainAuto : OpMode() {
         SHOOT_LEAVE
     }
 
+    private var state = 0;
+
     private lateinit var pathState: PathState
 
     // Poses
@@ -75,13 +77,13 @@ class MainAuto : OpMode() {
     }
 
     private fun statePathUpdate() {
-        when (pathState) {
-            PathState.START_SHOOT -> {
+        when (state) {
+            0 -> {
                 follower.followPath(driveStarttoCurry, true)
-                pathState = PathState.CURRYONTHETHREE
+                state++
             }
 
-            PathState.CURRYONTHETHREE -> {
+            1 -> {
                 hardware.get<MotorGroup>("outtake").set(0.75)
                 hardware.get<CRServo>("upper_intake").set(1.0)
                 hardware.get<SimpleServo>("feeder").position = 1.0 // 45.0 / 57.2958
@@ -89,11 +91,11 @@ class MainAuto : OpMode() {
                 if (!follower.isBusy && pathTimer.elapsedTime.seconds > 2.seconds) {
                     hardware.get<SimpleServo>("feeder").position = 0.0 // 22.0 / 57.2958
                     hardware.get<MotorGroup>("outtake").set(0.0)
-                    pathState = PathState.SHOOT_LEAVE
+                    state++
                 }
             }
 
-            PathState.SHOOT_LEAVE -> {
+            2 -> {
                 follower.followPath(driveCurrytoBye, true)
             }
         }

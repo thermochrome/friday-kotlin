@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.robot
 
+import com.arcrobotics.ftclib.controller.PIDFController
 import com.arcrobotics.ftclib.drivebase.MecanumDrive
 import com.arcrobotics.ftclib.gamepad.GamepadEx
 import com.arcrobotics.ftclib.hardware.SimpleServo
@@ -28,23 +29,48 @@ class Hardware(private val hardwareMap: HardwareMap) {
      * @param apply Any configurations to the device.
      * @return A `Pair` of the name and the lazily created device.
      */
-    private inline fun <reified T> make(name: String, noinline factory: (String) -> T, crossinline apply: Applicant<T> = {}) = name to lazy {
+    private fun <T> make(name: String, factory: (String) -> T, apply: Applicant<T> = {}) = name to lazy {
         factory(name).apply { apply(this) }
     }
 
-    private inline fun <reified T> device(name: String, crossinline apply: Applicant<T> = {}) = make(name,
+    /**
+     * Creates a device from the hardware map.
+     *
+     * @param T The type of device.
+     * @param name The name of the device.
+     * @param apply Any configurations to the device.
+     */
+    private inline fun <reified T> device(name: String, noinline apply: Applicant<T> = {}) = make(name,
         { hardwareMap.get(T::class.java, name) }, apply)
 
+    /**
+     * Creates a standard motor from the hardware map.
+     *
+     * @param name The name of the motor on the hardware map.
+     * @param apply Any configurations to the motor.
+     */
     private fun motor(name: String, apply: Applicant<MotorEx> = {}) = make(name,
         { MotorEx(hardwareMap, name) }, { setRunMode(Motor.RunMode.RawPower); apply() })
 
-    private fun continuousServo(name: String, apply: Applicant<CRServo> = {}) = make(name,
+    /**
+     * Creates a continuous servo from the hardware map.
+     *
+     * @param name The name of the continuous servo on the hardware map.
+     * @param apply Any configurations to the servo.
+     */
+    private fun crServo(name: String, apply: Applicant<CRServo> = {}) = make(name,
         { CRServo(hardwareMap, name) }, apply)
 
+    /**
+     * Creates a standard servo from the hardware map.
+     *
+     * @param name The name of the servo.
+     * @param apply Any configurations to the servo.
+     */
     private fun servo(name: String, apply: Applicant<SimpleServo> = {}) = make(name,
         { SimpleServo(hardwareMap, name, 0.0, 360.0) }, apply)
 
-    val devices = mapOf(
+    val devices: Map<String, Lazy<Any>> = mapOf(
         motor("left_front"),
         motor("right_front"),
         motor("left_back"),
@@ -53,15 +79,15 @@ class Hardware(private val hardwareMap: HardwareMap) {
         motor("intake"),
 
         make("outtake", { MotorGroup(
-            MotorEx(hardwareMap, "outtake_l"),
-            MotorEx(hardwareMap, "outtake_r").apply { inverted = true })},
-            { setRunMode(Motor.RunMode.RawPower) }),
+            MotorEx(hardwareMap, "outtake_l", Motor.GoBILDA.RPM_1620).apply { inverted = true },
+            MotorEx(hardwareMap, "outtake_r", Motor.GoBILDA.RPM_1620).apply { inverted = true })},
+            { setRunMode(Motor.RunMode.VelocityControl); setVeloCoefficients(1.0, 0.0, 0.0) }),
 
         motor("up") { inverted = true },
 
-        continuousServo("upper_intake") { inverted = true },
-
+        crServo("upper_intake") { inverted = true },
         servo("feeder") { setRange(22.0 / 57.2958, 45.0 / 57.2958) },
+
         device<GoBildaPinpointDriver>("odometry") { setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD) },
         device<Limelight3A>("limelight") { pipelineSwitch(0) }
     )
@@ -74,7 +100,7 @@ class Hardware(private val hardwareMap: HardwareMap) {
      * @return The device of the specified type.
      */
     inline operator fun <reified T> get(name: String): T {
-        val device = devices[name]?.value ?: throw IllegalArgumentException("Couldn't find $name")
+        val device = devices[name]?.value ?: throw NoSuchElementException("Couldn't find $name")
         return device as? T ?: throw IllegalArgumentException("$name is not of type ${T::class.simpleName}")
     }
 }
