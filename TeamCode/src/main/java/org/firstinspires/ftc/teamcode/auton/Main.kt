@@ -29,15 +29,7 @@ class MainAuto : OpMode() {
     private lateinit var pathTimer: Timer
     private lateinit var opModeTimer: Timer
 
-    enum class PathState {
-        START_SHOOT,
-        CURRYONTHETHREE,
-        SHOOT_LEAVE
-    }
-
-    private var state = 0;
-
-    private lateinit var pathState: PathState
+    private var state: UInt = 0u
 
     // Poses
     private val startPose = Pose(
@@ -78,12 +70,12 @@ class MainAuto : OpMode() {
 
     private fun statePathUpdate() {
         when (state) {
-            0 -> {
+            0u -> {
                 follower.followPath(driveStarttoCurry, true)
                 state++
             }
 
-            1 -> {
+            1u -> {
                 hardware.get<MotorGroup>("outtake").set(0.75)
                 hardware.get<CRServo>("upper_intake").set(1.0)
                 hardware.get<SimpleServo>("feeder").position = 1.0 // 45.0 / 57.2958
@@ -95,14 +87,14 @@ class MainAuto : OpMode() {
                 }
             }
 
-            2 -> {
+            2u -> {
                 follower.followPath(driveCurrytoBye, true)
             }
         }
     }
 
-    private fun setPathState(newState: PathState) {
-        pathState = newState
+    private fun setPathState(newState: UInt) {
+        state = newState
         pathTimer.resetTimer()
     }
 
@@ -114,7 +106,7 @@ class MainAuto : OpMode() {
         pathTimer = Timer()
         opModeTimer = Timer()
 
-        pathState = PathState.START_SHOOT
+        state = 0u
 
         buildPaths()
         follower.pose = startPose
@@ -122,7 +114,7 @@ class MainAuto : OpMode() {
 
     override fun start() {
         opModeTimer.resetTimer()
-        setPathState(pathState)
+        setPathState(state)
     }
 
     override fun loop() {

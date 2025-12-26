@@ -74,11 +74,11 @@ class Main: Setup() {
 
             ButtonData(GamepadKeys.Button.DPAD_UP, Activation.HELD,
                 InstantCommand({
-                    hardware.get<MotorEx>("up").set(1.0)
+                    hardware.get<CRServo>("licker").set(1.0)
                 }),
 
                 InstantCommand({
-                    hardware.get<MotorEx>("up").set(0.0)
+                    hardware.get<CRServo>("licker").set(0.0)
                 }),
 
                 gamepad = firstGamepad
@@ -86,11 +86,11 @@ class Main: Setup() {
 
             ButtonData(GamepadKeys.Button.DPAD_DOWN, Activation.HELD,
                 InstantCommand({
-                    hardware.get<MotorEx>("up").set(1.0)
+                    hardware.get<CRServo>("licker").set(1.0)
                 }),
 
                 InstantCommand({
-                    hardware.get<MotorEx>("up").set(0.0)
+                    hardware.get<CRServo>("licker").set(0.0)
                 }),
 
                 gamepad = firstGamepad
@@ -167,6 +167,8 @@ class Main: Setup() {
 //        }
 
         hardware.get<MotorGroup>("outtake").set(1.0) /* 0.119219 * minimumDistance + 0.661507 */
+
+        telemetry.addData("Licker", hardware.get<CRServo>("licker").currentPosition)
 
         if (limelight.latestResult.isValid) {
             telemetry.addData("Heading", limelight.latestResult.fiducialResults[0].targetPoseCameraSpace.position.x)

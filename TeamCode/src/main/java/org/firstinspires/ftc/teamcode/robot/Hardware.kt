@@ -86,7 +86,9 @@ class Hardware(private val hardwareMap: HardwareMap) {
         motor("up") { inverted = true },
 
         crServo("upper_intake") { inverted = true },
+
         servo("feeder") { setRange(22.0 / 57.2958, 45.0 / 57.2958) },
+        crServo("licker"),
 
         device<GoBildaPinpointDriver>("odometry") { setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD) },
         device<Limelight3A>("limelight") { pipelineSwitch(0) }
