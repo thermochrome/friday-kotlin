@@ -15,8 +15,8 @@ import org.firstinspires.ftc.teamcode.robot.Constants
 import org.firstinspires.ftc.teamcode.robot.Setup
 import kotlin.time.Duration.Companion.seconds
 
-@Autonomous(name = "Blue") @Suppress("unused")
-class AutonomousBlue: Setup() {
+@Autonomous(name = "Red") @Suppress("unused")
+class AutonomousRed: Setup() {
     private lateinit var follower: Follower
 
     private lateinit var pathTimer: Timer
@@ -25,9 +25,9 @@ class AutonomousBlue: Setup() {
     private var step = 0
 
     private val steps: List<Pose> = listOf(
-        Pose(21.34629404617254, 125.62818955042528, Math.toRadians(147.0)),
-        Pose(61.939246658566226, 82.06075334143378, Math.toRadians(135.0)),
-        Pose(61.76427703523694, 48.46658566221142, Math.toRadians(135.0))
+        Pose(144 - 21.34629404617254, 125.62818955042528, Math.toRadians(360 - 147.0)),
+        Pose(144 - 61.939246658566226, 82.06075334143378, Math.toRadians(360 - 135.0)),
+        Pose(144 - 61.76427703523694, 48.46658566221142, Math.toRadians(360 - 135.0))
     )
 
     private lateinit var pathChain: List<PathChain>
